@@ -164,7 +164,7 @@ public class CatzShooter
                         if(shooterRPM <= 0)
                         {
                             shooterRPM = SHOOTER_OFF_RPM;
-                            //System.out.println("RPM: " + shooterRPM);
+                            System.out.println("RPM: " + shooterRPM);
                         }
                         setShooterRPM(shooterRPM);
                         //Robot.elevator.stopElevator();
@@ -183,6 +183,8 @@ public class CatzShooter
                             shooterRPM = targetRPM;
 
                             setShooterRPM(targetRPM);
+
+                            enableShooterPID(); //NM 10/23/21
 
                             shooterTraceID = 1;
                         }
@@ -213,9 +215,7 @@ public class CatzShooter
 
                         if(inAutonomous == true)
                         { 
-                            
                             shooterTraceID = 31;
-                            shoot();
                         }
                         else 
                         {
@@ -236,6 +236,7 @@ public class CatzShooter
                         {
                             shooterTraceID = 41;
                             shooterOff();
+                            disableShooterPID(); //NM 10/23/21
                         }
                 
                     break;
@@ -244,7 +245,8 @@ public class CatzShooter
                         shooterOff();
                     break;
                 }        
-                
+                if(shooterTraceID > 0 && shooterState != SHOOTER_STATE_OFF)
+                    System.out.println(shooterTraceID + " : " + shootTime + " : " + shooterRPM + " : " + mtrVelocityA + " : " + mtrVelocityB);
                 Timer.delay(SHOOTER_THREAD_PERIOD);
 
             }
@@ -256,7 +258,7 @@ public class CatzShooter
     {
         double velocityB = rpm * (2048.0) * (1.0/60.0) * (1.0/10.0);
         double velocityA = -velocityB; //changed from negative to pos
-        
+        System.out.println(velocityB + " : " + velocityA);
         shtrMCA.set(TalonFXControlMode.Velocity, velocityA);
         shtrMCB.set(TalonFXControlMode.Velocity, velocityB);
     }
@@ -289,6 +291,34 @@ public class CatzShooter
         //Robot.indexer.setShooterIsRunning(false);
         Robot.xboxAux.setRumble(RumbleType.kLeftRumble, 0);
     
+    }
+
+    public void disableShooterPID() //NM 10/23/21
+    {
+        shtrMCA.config_kP(0, 0.0);
+        shtrMCA.config_kI(0, 0.0);
+        shtrMCA.config_kD(0, 0.0);
+        shtrMCA.config_kF(0, 0.0);
+
+        shtrMCB.config_kP(0, 0.0);
+        shtrMCB.config_kI(0, 0.0);
+        shtrMCB.config_kD(0, 0.0);
+        shtrMCB.config_kF(0, 0.0);
+
+    }
+
+    public void enableShooterPID() //NM 10/23/21
+    {
+        shtrMCA.config_kP(0, PID_P);
+        shtrMCA.config_kI(0, PID_I);
+        shtrMCA.config_kD(0, PID_D);
+        shtrMCA.config_kF(0, PID_F);
+
+        shtrMCB.config_kP(0, PID_P);
+        shtrMCB.config_kI(0, PID_I);
+        shtrMCB.config_kD(0, PID_D);
+        shtrMCB.config_kF(0, PID_F);
+
     }
 
     public double getRPM()
